@@ -1,0 +1,40 @@
+{
+  "name": "cashcn",
+  "version": "0.0.0-alpha.0",
+  "description": "Smart `npm fund`: resolve an OSS maintainer/repo/package and open the right funding checkout, pre-filled with amount + recurrence. Routes money, never custodies it.",
+  "type": "module",
+  "bin": {
+    "cashcn": "bin/cashcn.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "cashcn": "node bin/cashcn.js"
+  },
+  "keywords": [
+    "oss",
+    "funding",
+    "sponsors",
+    "opencollective",
+    "github-sponsors",
+    "liberapay",
+    "npm-fund",
+    "deep-link",
+    "cli"
+  ],
+  "author": "François Best <github@francoisbest.com> (https://francoisbest.com)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/franky47/cashcn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/franky47/cashcn/issues"
+  },
+  "homepage": "https://github.com/franky47/cashcn#readme"
+}
