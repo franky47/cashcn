@@ -1,0 +1,10 @@
+{
+  "sortImports": {
+    "order": "asc",
+    "ignoreCase": true,
+    "newlinesBetween": true
+  },
+  "sortPackageJson": {
+    "sortScripts": true
+  }
+}

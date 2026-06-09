@@ -2,39 +2,65 @@
   "name": "cashcn",
   "version": "0.0.0-alpha.0",
   "description": "Smart `npm fund`: resolve an OSS maintainer/repo/package and open the right funding checkout, pre-filled with amount + recurrence. Routes money, never custodies it.",
-  "type": "module",
-  "bin": {
-    "cashcn": "bin/cashcn.js"
-  },
-  "files": [
-    "bin",
-    "src"
-  ],
-  "engines": {
-    "node": ">=20"
-  },
-  "scripts": {
-    "cashcn": "node bin/cashcn.js"
-  },
   "keywords": [
-    "oss",
+    "cli",
+    "deep-link",
     "funding",
-    "sponsors",
-    "opencollective",
     "github-sponsors",
     "liberapay",
     "npm-fund",
-    "deep-link",
-    "cli"
+    "opencollective",
+    "oss",
+    "sponsors"
   ],
-  "author": "François Best <github@francoisbest.com> (https://francoisbest.com)",
+  "homepage": "https://github.com/franky47/cashcn#readme",
+  "bugs": {
+    "url": "https://github.com/franky47/cashcn/issues"
+  },
   "license": "MIT",
+  "author": "François Best <github@francoisbest.com> (https://francoisbest.com)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/franky47/cashcn.git"
   },
-  "bugs": {
-    "url": "https://github.com/franky47/cashcn/issues"
+  "bin": {
+    "cashcn": "dist/cashcn.js"
   },
-  "homepage": "https://github.com/franky47/cashcn#readme"
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "tsdown",
+    "deadcode": "knip",
+    "dev": "node bin/cashcn.ts",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "lint": "oxlint",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsgo --noEmit",
+    "typecheck:tsc": "tsc --noEmit",
+    "validate": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm deadcode && pnpm test"
+  },
+  "dependencies": {
+    "errore": "^0.14.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@typescript/native-preview": "^7.0.0-dev.20260602.1",
+    "knip": "^6.15.0",
+    "msw": "^2.7.0",
+    "oxfmt": "^0.53.0",
+    "oxlint": "^1.68.0",
+    "tsdown": "^0.22.1",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@11.5.0"
 }

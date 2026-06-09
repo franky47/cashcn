@@ -13,15 +13,15 @@ It is a **discovery + deep-link** tool. Money never touches `cashcn` — it rout
 you to GitHub Sponsors / Open Collective / Liberapay / etc. with the amount and
 recurrence already filled in. That is the one shape of this idea that is
 shippable today with zero PCI/KYC burden (see `cashcn.md` research for why
-actually *moving* the money requires becoming a regulated payment platform).
+actually _moving_ the money requires becoming a regulated payment platform).
 
 ## Why a POC, and what it proves
 
 The research found that **reading** funding data is easy everywhere but
 **initiating a payment via API is gated on every fiat platform** (GitHub
-`createSponsorship` is recurring-only and charges the *caller's* card; Open
+`createSponsorship` is recurring-only and charges the _caller's_ card; Open
 Collective blocks external Stripe/PayPal charges; thanks.dev / Liberapay have no
-payment API). What *is* fully feasible is deep-linking into the hosted checkout
+payment API). What _is_ fully feasible is deep-linking into the hosted checkout
 with the recipient, amount and recurrence prefilled. This POC demonstrates that
 end-to-end.
 
@@ -45,14 +45,14 @@ a browser — handy for scripting and for seeing what got resolved.
 
 ### Destinations
 
-| Form | Meaning |
-|---|---|
-| `gh://<user>` | GitHub user → GitHub Sponsors (+ their profile `FUNDING.yml`) |
-| `gh://<owner>/<repo>` | GitHub repo → reads `.github/FUNDING.yml` |
-| `npm://<pkg>` | npm package → reads its `funding` field, then the repo's `FUNDING.yml` |
-| `oc://<slug>` | Open Collective collective |
-| `<user>` | shorthand for `gh://<user>` |
-| `<owner>/<repo>` | shorthand for `gh://<owner>/<repo>` |
+| Form                  | Meaning                                                                |
+| --------------------- | ---------------------------------------------------------------------- |
+| `gh://<user>`         | GitHub user → GitHub Sponsors (+ their profile `FUNDING.yml`)          |
+| `gh://<owner>/<repo>` | GitHub repo → reads `.github/FUNDING.yml`                              |
+| `npm://<pkg>`         | npm package → reads its `funding` field, then the repo's `FUNDING.yml` |
+| `oc://<slug>`         | Open Collective collective                                             |
+| `<user>`              | shorthand for `gh://<user>`                                            |
+| `<owner>/<repo>`      | shorthand for `gh://<owner>/<repo>`                                    |
 
 Scoped npm packages need the explicit scheme: `npm://@scope/pkg`.
 
@@ -89,12 +89,12 @@ resolve to different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
 
 ### Pre-fill capability (per research)
 
-| Platform | Amount | Recurrence | Notes |
-|---|---|---|---|
-| Open Collective | ✅ | ✅ | `?amount=&interval=month\|year` |
-| Liberapay | ✅ | ✅ | recurring-only; `currency` required or amount is dropped |
-| GitHub Sponsors | ✅ | ✅ | exact-amount tier → `tier_id`, else custom `amount` (see below) |
-| Patreon / Ko-fi / Buy Me a Coffee / Polar | ❌ | ❌ | opens the profile page only |
+| Platform                                  | Amount | Recurrence | Notes                                                           |
+| ----------------------------------------- | ------ | ---------- | --------------------------------------------------------------- |
+| Open Collective                           | ✅     | ✅         | `?amount=&interval=month\|year`                                 |
+| Liberapay                                 | ✅     | ✅         | recurring-only; `currency` required or amount is dropped        |
+| GitHub Sponsors                           | ✅     | ✅         | exact-amount tier → `tier_id`, else custom `amount` (see below) |
+| Patreon / Ko-fi / Buy Me a Coffee / Polar | ❌     | ❌         | opens the profile page only                                     |
 
 ## Limitations (it's a POC)
 
@@ -105,11 +105,27 @@ resolve to different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
 - GitHub tier resolution matches the amount **exactly**; it doesn't snap to the
   nearest tier (that would silently change what you pay). Tier lookups aren't
   cached, so each GitHub deep-link makes one `gh`/HTTP call.
-- Zero runtime dependencies on purpose, so `npx`-from-source has no install step.
-  (The tier lookup shells out to `gh` only if it's already on your PATH.)
+- The tier lookup shells out to `gh` only if it's already on your PATH; otherwise
+  it falls back to crawling the public Sponsors page.
 
-## Run from source
+## Architecture
+
+All network/`gh` I/O sits behind one injected `FundingSource` port
+(`src/funding/source.ts`); resolution, ranking and tier-matching are pure
+functions over it. That keeps the whole pipeline testable offline with a fake
+source, while the production `httpFundingSource` adapter validates every external
+response with zod and returns failures as [`errore`](https://errore.org) values.
+
+## Development
 
 ```bash
-node bin/cashcn.js sponsor 47ng/nuqs 10/m --print
+pnpm install
+pnpm dev sponsor 47ng/nuqs 10/m --print   # run from source (node strips TS types)
+pnpm test                                 # vitest (msw mocks the network)
+pnpm validate                             # typecheck · lint · format · deadcode · test
+pnpm build                                # tsdown -> dist/cashcn.js
 ```
+
+Toolchain: `tsgo` (typecheck), `oxlint` + `oxfmt` (lint/format), `knip`
+(dead-code), `vitest` + `msw` (tests), `tsdown` (bundle), `pnpm` 11 with a 24h
+release-age cooldown on runtime deps.

@@ -1,0 +1,22 @@
+# Supply-chain hardening (pnpm 11):
+# - hold new releases for 24h before they're installable (cooldown against
+#   compromised-publish attacks). This is what protects the *runtime* deps.
+# - block dependency build/postinstall scripts by default.
+#
+# The dev toolchain below is excluded from the cooldown: oxc and the tsgo
+# nightly publish on a fast cadence and are trusted first-party tools, so the
+# 24h hold would permanently break installs without adding real protection.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - "@typescript/native-preview"
+  - "@typescript/native-preview-*"
+  - oxlint
+  - "@oxlint/*"
+  - oxfmt
+  - "@oxfmt/*"
+strictDepBuilds: true
+
+# msw's build script only generates the browser service worker; we use msw/node
+# for tests, so it's not needed.
+allowBuilds:
+  msw: false
