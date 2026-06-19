@@ -19,7 +19,9 @@ const { version: VERSION } = JSON.parse(
 
 // All verbs are synonyms for the same action (open a funding deep-link). They
 // exist purely so the command reads like a sentence; recurrence comes from the
-// amount suffix, not the verb.
+// amount suffix, not the verb. The verb is optional — when omitted we default to
+// DEFAULT_VERB so `cashcn franky47 100` reads the same as `cashcn sponsor …`.
+const DEFAULT_VERB = "sponsor";
 const VERBS = new Set([
   "pay",
   "donate",
@@ -70,15 +72,27 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
     return 0;
   }
 
-  const [verb, destinationToken, amountToken] = positionals;
-  if (!verb || !VERBS.has(verb)) {
-    fail(new UnknownVerbError({ verb: verb ?? "", verbs: [...VERBS].join(", ") }).message);
+  // The verb is optional. If the first token is a known verb, consume it;
+  // otherwise default and treat the positionals as <destination> <amount>. We
+  // only flag an unknown verb when there are too many tokens for the bare form,
+  // which means the user almost certainly meant the first token as a verb.
+  let verb = DEFAULT_VERB;
+  let rest = positionals;
+  if (positionals[0] && VERBS.has(positionals[0])) {
+    verb = positionals[0];
+    rest = positionals.slice(1);
+  } else if (positionals.length >= 3) {
+    fail(
+      new UnknownVerbError({ verb: positionals[0] ?? "", verbs: [...VERBS].join(", ") }).message,
+    );
     return 1;
   }
+
+  const [destinationToken, amountToken] = rest;
   if (!destinationToken || !amountToken) {
     fail(
       new UsageError({
-        reason: "Usage: cashcn <verb> <destination> <amount>[/{m,y}]",
+        reason: "Usage: cashcn [verb] <destination> <amount>[/{m,y}]",
       }).message,
     );
     return 1;
@@ -205,9 +219,9 @@ function helpText(): string {
   return `cashcn — open the right OSS funding checkout, pre-filled.
 
 Usage:
-  npx cashcn <verb> <destination> <amount>[/{m,y}]
+  npx cashcn [verb] <destination> <amount>[/{m,y}]
 
-Verbs (all synonyms):
+Verbs (all synonyms, optional — defaults to "${DEFAULT_VERB}"):
   ${[...VERBS].join(", ")}
 
 Destinations:
@@ -229,6 +243,7 @@ Flags:
   -v, --version        show version
 
 Examples:
+  npx cashcn franky47 100              (verb omitted → "${DEFAULT_VERB}")
   npx cashcn pay gh://franky47 100
   npx cashcn sponsor 47ng/nuqs 10/m
   npx cashcn donate oc://antfu 25/y

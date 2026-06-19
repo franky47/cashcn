@@ -60,6 +60,14 @@ describe("run", () => {
     expect(h.text()).toContain("tier_id=555");
   });
 
+  it("defaults the verb when omitted", async () => {
+    const h = harness(fakeSource());
+    const code = await run(["oc://cashcn", "10/m", "--print"], h.deps);
+    expect(code).toBe(0);
+    expect(h.text()).toContain("opencollective.com/cashcn/donate");
+    expect(h.text()).toContain("sponsor $10 monthly");
+  });
+
   it("rejects an unknown verb", async () => {
     const h = harness(fakeSource());
     const code = await run(["yeet", "oc://cashcn", "10"], h.deps);
