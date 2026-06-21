@@ -1,6 +1,6 @@
 # cashcn
 
-> Ultra-simple payments to OSS maintainers via the CLI — a smarter `npm fund`.
+> Ultra-simple payments to OSS maintainers via the CLI.
 
 `cashcn` resolves a maintainer / repo / package to its funding destinations and
 opens the **right hosted checkout, pre-filled with your amount and recurrence**.
@@ -11,19 +11,7 @@ npx cashcn <destination> <amount>[/{m,y}]
 
 It is a **discovery + deep-link** tool. Money never touches `cashcn` — it routes
 you to GitHub Sponsors / Open Collective / Liberapay / etc. with the amount and
-recurrence already filled in. That is the one shape of this idea that is
-shippable today with zero PCI/KYC burden (see `cashcn.md` research for why
-actually _moving_ the money requires becoming a regulated payment platform).
-
-## Why a POC, and what it proves
-
-The research found that **reading** funding data is easy everywhere but
-**initiating a payment via API is gated on every fiat platform** (GitHub
-`createSponsorship` is recurring-only and charges the _caller's_ card; Open
-Collective blocks external Stripe/PayPal charges; thanks.dev / Liberapay have no
-payment API). What _is_ fully feasible is deep-linking into the hosted checkout
-with the recipient, amount and recurrence prefilled. This POC demonstrates that
-end-to-end.
+recurrence already filled in.
 
 ## Usage
 
@@ -84,7 +72,7 @@ whose price exactly matches your amount (`src/github-tiers.js`), trying in order
 One-time and monthly tiers have different ids, so `… 10` and `… 10/m` resolve to
 different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
 
-### Pre-fill capability (per research)
+### Pre-fill capability
 
 | Platform                                  | Amount | Recurrence | Notes                                                           |
 | ----------------------------------------- | ------ | ---------- | --------------------------------------------------------------- |
@@ -93,12 +81,11 @@ different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
 | GitHub Sponsors                           | ✅     | ✅         | exact-amount tier → `tier_id`, else custom `amount` (see below) |
 | Patreon / Ko-fi / Buy Me a Coffee / Polar | ❌     | ❌         | opens the profile page only                                     |
 
-## Limitations (it's a POC)
+## Limitations
 
 - `FUNDING.yml` parser handles the flat `key: value` / `key: [a, b]` shape only —
-  not arbitrary YAML. Swap in a real parser for production.
-- No ecosyste.ms aggregator backstop, no `funding.json` (floss.fund) source yet —
-  both are noted in the research as worthwhile additions.
+  not arbitrary YAML.
+- No ecosyste.ms aggregator backstop, no `funding.json` (floss.fund) source.
 - GitHub tier resolution matches the amount **exactly**; it doesn't snap to the
   nearest tier (that would silently change what you pay). Tier lookups aren't
   cached, so each GitHub deep-link makes one `gh`/HTTP call.
