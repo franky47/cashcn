@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { parseAmount } from "./amount.ts";
 import { parseDestination } from "./destination.ts";
-import { NoFundingTargetsError, UnknownVerbError, UsageError } from "./errors.ts";
+import { NoFundingTargetsError, UsageError } from "./errors.ts";
 import { httpFundingSource } from "./funding/http-source.ts";
 import { resolveTargets } from "./funding/resolve.ts";
 import type { FundingSource } from "./funding/source.ts";
@@ -16,24 +16,6 @@ import type { Amount, DeepLink, Interval, Target } from "./types.ts";
 const { version: VERSION } = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 ) as { version: string };
-
-// All verbs are synonyms for the same action (open a funding deep-link). They
-// exist purely so the command reads like a sentence; recurrence comes from the
-// amount suffix, not the verb. The verb is optional — when omitted we default to
-// DEFAULT_VERB so `cashcn franky47 100` reads the same as `cashcn sponsor …`.
-const DEFAULT_VERB = "sponsor";
-const VERBS = new Set([
-  "pay",
-  "donate",
-  "sponsor",
-  "gift",
-  "send",
-  "tip",
-  "back",
-  "fund",
-  "thank",
-  "support",
-]);
 
 const INTERVAL_LABEL: Record<Interval, string> = {
   once: "one-time",
@@ -72,27 +54,11 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
     return 0;
   }
 
-  // The verb is optional. If the first token is a known verb, consume it;
-  // otherwise default and treat the positionals as <destination> <amount>. We
-  // only flag an unknown verb when there are too many tokens for the bare form,
-  // which means the user almost certainly meant the first token as a verb.
-  let verb = DEFAULT_VERB;
-  let rest = positionals;
-  if (positionals[0] && VERBS.has(positionals[0])) {
-    verb = positionals[0];
-    rest = positionals.slice(1);
-  } else if (positionals.length >= 3) {
-    fail(
-      new UnknownVerbError({ verb: positionals[0] ?? "", verbs: [...VERBS].join(", ") }).message,
-    );
-    return 1;
-  }
-
-  const [destinationToken, amountToken] = rest;
-  if (!destinationToken || !amountToken) {
+  const [destinationToken, amountToken, ...extra] = positionals;
+  if (!destinationToken || !amountToken || extra.length > 0) {
     fail(
       new UsageError({
-        reason: "Usage: cashcn [verb] <destination> <amount>[/{m,y}]",
+        reason: "Usage: cashcn <destination> <amount>[/{m,y}]",
       }).message,
     );
     return 1;
@@ -120,7 +86,7 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
   const chosen = ranked[0]!;
   const link = await buildLink(chosen, amount, source);
 
-  printPlan({ verb, destinationToken, amount, ranked, chosen, link, log });
+  printPlan({ destinationToken, amount, ranked, chosen, link, log });
 
   if (flags.print || flags.dryRun) {
     log(`\n${link.url}`);
@@ -152,7 +118,6 @@ function labelOf(key: string): string {
 }
 
 interface PlanView {
-  verb: string;
   destinationToken: string;
   amount: Amount;
   ranked: Target[];
@@ -161,9 +126,9 @@ interface PlanView {
   log: (message: string) => void;
 }
 
-function printPlan({ verb, destinationToken, amount, ranked, chosen, link, log }: PlanView): void {
+function printPlan({ destinationToken, amount, ranked, chosen, link, log }: PlanView): void {
   const money = `$${amount.value} ${INTERVAL_LABEL[amount.interval]}`;
-  log(`\n${bold(`${verb} ${money}`)} → ${destinationToken}`);
+  log(`\n${bold(money)} → ${destinationToken}`);
 
   log(`\nResolved ${ranked.length} funding destination(s):`);
   for (const target of ranked) {
@@ -219,10 +184,7 @@ function helpText(): string {
   return `cashcn — open the right OSS funding checkout, pre-filled.
 
 Usage:
-  npx cashcn [verb] <destination> <amount>[/{m,y}]
-
-Verbs (all synonyms, optional — defaults to "${DEFAULT_VERB}"):
-  ${[...VERBS].join(", ")}
+  npx cashcn <destination> <amount>[/{m,y}]
 
 Destinations:
   gh://<user>            GitHub user        (e.g. gh://franky47)
@@ -243,11 +205,11 @@ Flags:
   -v, --version        show version
 
 Examples:
-  npx cashcn franky47 100              (verb omitted → "${DEFAULT_VERB}")
-  npx cashcn pay gh://franky47 100
-  npx cashcn sponsor 47ng/nuqs 10/m
-  npx cashcn donate oc://antfu 25/y
-  npx cashcn tip npm://nuqs 5/m --print
+  npx cashcn franky47 100
+  npx cashcn gh://franky47 100
+  npx cashcn 47ng/nuqs 10/m
+  npx cashcn oc://antfu 25/y
+  npx cashcn npm://nuqs 5/m --print
 
 Supported deep-link platforms: ${platformList}.
 cashcn routes payments to hosted checkouts; it never custodies money.`;

@@ -1,6 +1,6 @@
 {
   "name": "cashcn",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Smart `npm fund`: resolve an OSS maintainer/repo/package and open the right funding checkout, pre-filled with amount + recurrence. Routes money, never custodies it.",
   "keywords": [
     "cli",

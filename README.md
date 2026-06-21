@@ -6,7 +6,7 @@
 opens the **right hosted checkout, pre-filled with your amount and recurrence**.
 
 ```bash
-npx cashcn <verb> <destination> <amount>[/{m,y}]
+npx cashcn <destination> <amount>[/{m,y}]
 ```
 
 It is a **discovery + deep-link** tool. Money never touches `cashcn` — it routes
@@ -28,13 +28,10 @@ end-to-end.
 ## Usage
 
 ```bash
-# verbs are all synonyms (read it like a sentence):
-#   pay donate sponsor gift send tip back fund thank support
-
-npx cashcn pay     gh://franky47     100      # one-time $100
-npx cashcn sponsor 47ng/nuqs         10/m     # $10 / month
-npx cashcn donate  oc://antfu        25/y     # $25 / year
-npx cashcn tip     npm://nuqs        5/m      # resolve npm pkg funding
+npx cashcn gh://franky47   100      # one-time $100
+npx cashcn 47ng/nuqs       10/m     # $10 / month
+npx cashcn oc://antfu      25/y     # $25 / year
+npx cashcn npm://nuqs      5/m      # resolve npm pkg funding
 ```
 
 > The `$` prefix is intentionally dropped — it triggers shell variable
@@ -84,8 +81,8 @@ whose price exactly matches your amount (`src/github-tiers.js`), trying in order
    the `/sponsorships` checkout (`?frequency=…&amount=…`). GitHub honours this as
    long as the maintainer has custom amounts enabled.
 
-One-time and monthly tiers have different ids, so `pay … 10` and `sponsor … 10/m`
-resolve to different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
+One-time and monthly tiers have different ids, so `… 10` and `… 10/m` resolve to
+different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
 
 ### Pre-fill capability (per research)
 
@@ -120,7 +117,7 @@ response with zod and returns failures as [`errore`](https://errore.org) values.
 
 ```bash
 pnpm install
-pnpm dev sponsor 47ng/nuqs 10/m --print   # run from source (node strips TS types)
+pnpm dev 47ng/nuqs 10/m --print           # run from source (node strips TS types)
 pnpm test                                 # vitest (msw mocks the network)
 pnpm validate                             # typecheck · lint · format · deadcode · test
 pnpm build                                # tsdown -> dist/cashcn.js

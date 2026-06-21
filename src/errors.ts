@@ -14,11 +14,6 @@ export class InvalidDestinationError extends errore.createTaggedError({
   message: "$reason",
 }) {}
 
-export class UnknownVerbError extends errore.createTaggedError({
-  name: "UnknownVerbError",
-  message: 'Unknown verb "$verb". Try one of: $verbs.',
-}) {}
-
 export class UsageError extends errore.createTaggedError({
   name: "UsageError",
   message: "$reason",
