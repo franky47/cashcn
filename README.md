@@ -6,7 +6,7 @@
 opens the **right hosted checkout, pre-filled with your amount and recurrence**.
 
 ```bash
-npx cashcn <destination> <amount>[/{m,y}]
+npx cashcn <destination> [amount][/{m,y}]
 ```
 
 It is a **discovery + deep-link** tool. Money never touches `cashcn` — it routes
@@ -20,10 +20,14 @@ npx cashcn gh://franky47   100      # one-time $100
 npx cashcn 47ng/nuqs       10/m     # $10 / month
 npx cashcn oc://antfu      25/y     # $25 / year
 npx cashcn npm://nuqs      5/m      # resolve npm pkg funding
+npx cashcn franky47                 # one-time, pick the amount on the page
+npx cashcn franky47        /m       # monthly, pick the amount on the page
 ```
 
 > The `$` prefix is intentionally dropped — it triggers shell variable
 > expansion. Amounts are plain numbers with an optional `/m` or `/y` suffix.
+> Omit the amount (or pass a bare `/m` or `/y`) to open the checkout with just
+> the recurrence pre-selected and choose the amount there.
 
 Add `--print` (or `--dry-run`) to resolve and build the link **without** opening
 a browser — handy for scripting and for seeing what got resolved.
@@ -71,6 +75,10 @@ whose price exactly matches your amount (`src/github-tiers.js`), trying in order
 
 One-time and monthly tiers have different ids, so `… 10` and `… 10/m` resolve to
 different tiers. GitHub has no yearly tier, so `/y` skips the lookup.
+
+Amountless donations skip the lookup too and open the public Sponsors profile
+(`?frequency=one-time|recurring`) instead of the login-walled `/sponsorships`
+checkout: the frequency tab arrives pre-selected and carries into checkout.
 
 ### Pre-fill capability
 

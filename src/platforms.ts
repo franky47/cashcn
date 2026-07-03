@@ -27,12 +27,16 @@ export const PLATFORMS: Platform[] = [
     key: "open_collective",
     label: "Open Collective",
     rank: 1,
+    // The /donate flow defaults to one-time, so recurrence is always covered:
+    // implicitly for `once`, via `interval=month|year` otherwise.
     build(slug, { value, interval }) {
-      const params = new URLSearchParams({ amount: String(value) });
+      const params = new URLSearchParams();
+      if (value !== null) params.set("amount", String(value));
       if (interval !== "once") params.set("interval", interval); // month | year
+      const query = params.size > 0 ? `?${params}` : "";
       return {
-        url: `https://opencollective.com/${enc(slug)}/donate?${params}`,
-        prefilled: { amount: true, recurrence: true },
+        url: `https://opencollective.com/${enc(slug)}/donate${query}`,
+        prefilled: { amount: value !== null, recurrence: true },
       };
     },
     fromUrl: (u) => segment(u, "opencollective.com", 1),
@@ -44,7 +48,10 @@ export const PLATFORMS: Platform[] = [
     // `tier` (optional) is a resolved match for the requested amount. When
     // present we deep-link straight into that tier; otherwise we pre-fill a
     // free-form `amount` on the /sponsorships checkout (works as long as the
-    // maintainer has custom amounts enabled).
+    // maintainer has custom amounts enabled). Without an amount we open the
+    // public profile instead: /sponsorships is login-walled, while the profile
+    // renders logged-out with the frequency tab pre-selected (GitHub's own
+    // tab-switcher URLs) and carries it into checkout.
     build(login, { value, interval }, tier) {
       const frequency = interval === "once" ? "one-time" : "recurring";
       if (tier) {
@@ -56,6 +63,17 @@ export const PLATFORMS: Platform[] = [
           url: `https://github.com/sponsors/${enc(login)}/sponsorships?${params}`,
           prefilled: { amount: true, recurrence: true },
           note: `Matched the $${tier.dollars} tier (#${tier.tierId}, via ${tier.via}).`,
+        };
+      }
+      if (value === null) {
+        const params = new URLSearchParams({
+          frequency,
+          metadata_source: "cashcn",
+        });
+        return {
+          url: `https://github.com/sponsors/${enc(login)}?${params}`,
+          prefilled: { amount: false, recurrence: true },
+          note: `Pick a tier on the Sponsors page — the ${frequency} tab is pre-selected.`,
         };
       }
       const params = new URLSearchParams({
@@ -83,17 +101,19 @@ export const PLATFORMS: Platform[] = [
         return {
           url: `https://liberapay.com/${enc(user)}/donate`,
           prefilled: { amount: false, recurrence: false },
-          note: "Liberapay is recurring-only — it cannot pre-fill a one-time amount.",
+          note: "Liberapay is recurring-only — it cannot pre-fill a one-time donation.",
         };
       }
       const params = new URLSearchParams({
-        currency: "USD",
         period: interval === "year" ? "yearly" : "monthly",
-        amount: String(value), // ignored by Liberapay unless `currency` is set
       });
+      if (value !== null) {
+        params.set("currency", "USD"); // amount is ignored unless `currency` is set
+        params.set("amount", String(value));
+      }
       return {
         url: `https://liberapay.com/${enc(user)}/donate?${params}`,
-        prefilled: { amount: true, recurrence: true },
+        prefilled: { amount: value !== null, recurrence: true },
       };
     },
     fromUrl: (u) => segment(u, "liberapay.com", 1),

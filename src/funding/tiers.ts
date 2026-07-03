@@ -47,6 +47,8 @@ export async function resolveSponsorTier(
   login: string,
   amount: Amount,
 ): Promise<GithubTier | null> {
+  // No amount to match a tier against — the user picks one on the page.
+  if (amount.value === null) return null;
   // GitHub Sponsors recurring tiers are monthly-only — there is no yearly tier.
   if (amount.interval === "year") return null;
 
