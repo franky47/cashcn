@@ -98,6 +98,24 @@ describe("run", () => {
     expect(h.text()).not.toContain("tier_id=");
   });
 
+  it.each(["/m", "100", "10/m"])(
+    "rejects a lone amount-shaped argument (%s) as a missing destination",
+    async (token) => {
+      const h = harness(fakeSource());
+      const code = await run([token], h.deps);
+      expect(code).toBe(1);
+      expect(h.errText()).toMatch(/looks like an amount/i);
+      expect(h.opened).toEqual([]);
+    },
+  );
+
+  it("rejects an empty amount token", async () => {
+    const h = harness(fakeSource());
+    const code = await run(["franky47", ""], h.deps);
+    expect(code).toBe(1);
+    expect(h.errText()).toMatch(/missing amount/i);
+  });
+
   it("rejects extra positional arguments", async () => {
     const h = harness(fakeSource());
     const code = await run(["sponsor", "oc://cashcn", "10"], h.deps);

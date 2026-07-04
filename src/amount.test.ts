@@ -36,6 +36,10 @@ describe("parseAmount", () => {
     expect(parseAmount("/")).toBeInstanceOf(InvalidAmountError);
   });
 
+  it("rejects a lone $", () => {
+    expect(parseAmount("$")).toBeInstanceOf(InvalidAmountError);
+  });
+
   it("rejects an unknown bare recurrence", () => {
     const result = parseAmount("/decade");
     expect(result).toBeInstanceOf(InvalidAmountError);

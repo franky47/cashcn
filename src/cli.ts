@@ -63,15 +63,25 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
     );
     return 1;
   }
+  // Amount syntax (`100`, `10/m`, `/m`) is a subset of destination syntax, so a
+  // forgotten destination would silently resolve to a GitHub user/repo of that
+  // name. A lone amount-shaped token means the destination is missing.
+  if (positionals.length === 1 && !(parseAmount(destinationToken) instanceof Error)) {
+    fail(
+      new UsageError({
+        reason: `"${destinationToken}" looks like an amount, but the destination is missing (use gh://${destinationToken} if it really is one). Usage: cashcn <destination> [amount][/{m,y}]`,
+      }).message,
+    );
+    return 1;
+  }
 
   const destination = parseDestination(destinationToken);
   if (destination instanceof Error) {
     fail(destination.message);
     return 1;
   }
-  const amount: Amount | Error = amountToken
-    ? parseAmount(amountToken)
-    : { value: null, interval: "once" };
+  const amount: Amount | Error =
+    amountToken === undefined ? { value: null, interval: "once" } : parseAmount(amountToken);
   if (amount instanceof Error) {
     fail(amount.message);
     return 1;

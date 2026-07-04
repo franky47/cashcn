@@ -46,12 +46,12 @@ export const PLATFORMS: Platform[] = [
     label: "GitHub Sponsors",
     rank: 3,
     // `tier` (optional) is a resolved match for the requested amount. When
-    // present we deep-link straight into that tier; otherwise we pre-fill a
-    // free-form `amount` on the /sponsorships checkout (works as long as the
-    // maintainer has custom amounts enabled). Without an amount we open the
-    // public profile instead: /sponsorships is login-walled, while the profile
+    // present we deep-link straight into that tier. Without an amount we open
+    // the public profile: /sponsorships is login-walled, while the profile
     // renders logged-out with the frequency tab pre-selected (GitHub's own
-    // tab-switcher URLs) and carries it into checkout.
+    // tab-switcher URLs) and carries it into checkout. Otherwise we pre-fill a
+    // free-form `amount` on the /sponsorships checkout (works as long as the
+    // maintainer has custom amounts enabled).
     build(login, { value, interval }, tier) {
       const frequency = interval === "once" ? "one-time" : "recurring";
       if (tier) {
@@ -70,10 +70,13 @@ export const PLATFORMS: Platform[] = [
           frequency,
           metadata_source: "cashcn",
         });
+        const yearly = interval === "year";
         return {
           url: `https://github.com/sponsors/${enc(login)}?${params}`,
-          prefilled: { amount: false, recurrence: true },
-          note: `Pick a tier on the Sponsors page — the ${frequency} tab is pre-selected.`,
+          prefilled: { amount: false, recurrence: !yearly },
+          note: yearly
+            ? "GitHub Sponsors has no yearly option — the recurring (monthly) tab is pre-selected."
+            : `Pick a tier on the Sponsors page — the ${frequency} tab is pre-selected.`,
         };
       }
       const params = new URLSearchParams({

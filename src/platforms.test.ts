@@ -69,6 +69,14 @@ describe("GitHub Sponsors", () => {
 
     const recurring = gh.build("franky47", amountlessMonthly);
     expect(recurring.url).toContain("frequency=recurring");
+    expect(recurring.url).not.toContain("/sponsorships");
+  });
+
+  it("does not claim yearly recurrence for an amountless donation (monthly-only)", () => {
+    const link = gh.build("franky47", { value: null, interval: "year" });
+    expect(link.url).toContain("frequency=recurring");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: false });
+    expect(link.note).toMatch(/no yearly/i);
   });
 });
 

@@ -2,8 +2,7 @@ import { InvalidAmountError } from "./errors.ts";
 import type { Amount, Interval } from "./types.ts";
 
 // Parse the amount token: `100`, `10/m`, `25/y`, `10/month`, `5/yr`.
-// A bare recurrence (`/m`, `/y`) is an amountless donation — the checkout opens
-// with the right frequency and the user picks the amount there.
+// A bare recurrence (`/m`, `/y`) is an amountless donation (`value: null`).
 // The leading `$` is intentionally dropped by the user to dodge shell expansion,
 // but we tolerate it if it sneaks through quoting.
 
