@@ -55,10 +55,21 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
   }
 
   const [destinationToken, amountToken, ...extra] = positionals;
-  if (!destinationToken || !amountToken || extra.length > 0) {
+  if (!destinationToken || extra.length > 0) {
     fail(
       new UsageError({
-        reason: "Usage: cashcn <destination> <amount>[/{m,y}]",
+        reason: "Usage: cashcn <destination> [amount][/{m,y}]",
+      }).message,
+    );
+    return 1;
+  }
+  // Amount syntax (`100`, `10/m`, `/m`) is a subset of destination syntax, so a
+  // forgotten destination would silently resolve to a GitHub user/repo of that
+  // name. A lone amount-shaped token means the destination is missing.
+  if (positionals.length === 1 && !(parseAmount(destinationToken) instanceof Error)) {
+    fail(
+      new UsageError({
+        reason: `"${destinationToken}" looks like an amount, but the destination is missing (use gh://${destinationToken} if it really is one). Usage: cashcn <destination> [amount][/{m,y}]`,
       }).message,
     );
     return 1;
@@ -69,7 +80,8 @@ export async function run(argv: string[], deps: Partial<RunDeps> = {}): Promise<
     fail(destination.message);
     return 1;
   }
-  const amount = parseAmount(amountToken);
+  const amount: Amount | Error =
+    amountToken === undefined ? { value: null, interval: "once" } : parseAmount(amountToken);
   if (amount instanceof Error) {
     fail(amount.message);
     return 1;
@@ -127,7 +139,8 @@ interface PlanView {
 }
 
 function printPlan({ destinationToken, amount, ranked, chosen, link, log }: PlanView): void {
-  const money = `$${amount.value} ${INTERVAL_LABEL[amount.interval]}`;
+  const label = INTERVAL_LABEL[amount.interval];
+  const money = amount.value === null ? `${label} donation` : `$${amount.value} ${label}`;
   log(`\n${bold(money)} → ${destinationToken}`);
 
   log(`\nResolved ${ranked.length} funding destination(s):`);
@@ -184,7 +197,7 @@ function helpText(): string {
   return `cashcn — open the right OSS funding checkout, pre-filled.
 
 Usage:
-  npx cashcn <destination> <amount>[/{m,y}]
+  npx cashcn <destination> [amount][/{m,y}]
 
 Destinations:
   gh://<user>            GitHub user        (e.g. gh://franky47)
@@ -198,6 +211,8 @@ Amount:
   100      one-time $100   (no $ prefix — it triggers shell expansion)
   10/m     $10 monthly
   25/y     $25 yearly
+  (none)   one-time, pick the amount on the page
+  /m       monthly, pick the amount on the page
 
 Flags:
   --print, --dry-run   resolve + build the link but don't open the browser
@@ -206,6 +221,8 @@ Flags:
 
 Examples:
   npx cashcn franky47 100
+  npx cashcn franky47
+  npx cashcn franky47 /m
   npx cashcn gh://franky47 100
   npx cashcn 47ng/nuqs 10/m
   npx cashcn oc://antfu 25/y

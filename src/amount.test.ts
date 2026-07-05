@@ -26,6 +26,28 @@ describe("parseAmount", () => {
     expect(parseAmount("$20/y")).toEqual({ value: 20, interval: "year" });
   });
 
+  it("parses a bare recurrence as an amountless donation", () => {
+    expect(parseAmount("/m")).toEqual({ value: null, interval: "month" });
+    expect(parseAmount("/y")).toEqual({ value: null, interval: "year" });
+    expect(parseAmount("/monthly")).toEqual({ value: null, interval: "month" });
+  });
+
+  it("rejects a bare slash with no recurrence", () => {
+    expect(parseAmount("/")).toBeInstanceOf(InvalidAmountError);
+  });
+
+  it("rejects a lone $", () => {
+    expect(parseAmount("$")).toBeInstanceOf(InvalidAmountError);
+  });
+
+  it("rejects an unknown bare recurrence", () => {
+    const result = parseAmount("/decade");
+    expect(result).toBeInstanceOf(InvalidAmountError);
+    if (result instanceof InvalidAmountError) {
+      expect(result.message).toContain("decade");
+    }
+  });
+
   it("returns an InvalidAmountError for non-numeric input", () => {
     const result = parseAmount("abc");
     expect(result).toBeInstanceOf(InvalidAmountError);

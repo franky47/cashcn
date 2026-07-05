@@ -6,6 +6,8 @@ import type { Amount } from "./types.ts";
 const once: Amount = { value: 50, interval: "once" };
 const monthly: Amount = { value: 10, interval: "month" };
 const yearly: Amount = { value: 25, interval: "year" };
+const amountlessOnce: Amount = { value: null, interval: "once" };
+const amountlessMonthly: Amount = { value: null, interval: "month" };
 
 describe("Open Collective", () => {
   const oc = platformByKey("open_collective")!;
@@ -21,6 +23,18 @@ describe("Open Collective", () => {
   it("adds interval=month / interval=year for recurring donations", () => {
     expect(oc.build("cashcn", monthly).url).toContain("interval=month");
     expect(oc.build("cashcn", yearly).url).toContain("interval=year");
+  });
+
+  it("opens the bare donate page for an amountless one-time donation", () => {
+    const link = oc.build("cashcn", amountlessOnce);
+    expect(link.url).toBe("https://opencollective.com/cashcn/donate");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: true });
+  });
+
+  it("pre-fills only the interval for an amountless monthly donation", () => {
+    const link = oc.build("cashcn", amountlessMonthly);
+    expect(link.url).toBe("https://opencollective.com/cashcn/donate?interval=month");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: true });
   });
 });
 
@@ -44,6 +58,26 @@ describe("GitHub Sponsors", () => {
     expect(gh.build("franky47", monthly).url).toContain("frequency=recurring");
     expect(gh.build("franky47", once).url).toContain("amount=50");
   });
+
+  it("opens the profile tier picker for an amountless donation", () => {
+    const oneTime = gh.build("franky47", amountlessOnce);
+    expect(oneTime.url).toContain("github.com/sponsors/franky47?");
+    expect(oneTime.url).not.toContain("/sponsorships");
+    expect(oneTime.url).toContain("frequency=one-time");
+    expect(oneTime.url).not.toContain("amount=");
+    expect(oneTime.prefilled).toEqual({ amount: false, recurrence: true });
+
+    const recurring = gh.build("franky47", amountlessMonthly);
+    expect(recurring.url).toContain("frequency=recurring");
+    expect(recurring.url).not.toContain("/sponsorships");
+  });
+
+  it("does not claim yearly recurrence for an amountless donation (monthly-only)", () => {
+    const link = gh.build("franky47", { value: null, interval: "year" });
+    expect(link.url).toContain("frequency=recurring");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: false });
+    expect(link.note).toMatch(/no yearly/i);
+  });
 });
 
 describe("Liberapay", () => {
@@ -61,6 +95,19 @@ describe("Liberapay", () => {
     expect(link.url).toContain("period=monthly");
     expect(link.url).toContain("amount=10");
     expect(link.prefilled).toEqual({ amount: true, recurrence: true });
+  });
+
+  it("pre-fills only the period for an amountless monthly donation", () => {
+    const link = lp.build("user", amountlessMonthly);
+    expect(link.url).toBe("https://liberapay.com/user/donate?period=monthly");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: true });
+  });
+
+  it("opens the bare donate page for an amountless one-time donation", () => {
+    const link = lp.build("user", amountlessOnce);
+    expect(link.url).toBe("https://liberapay.com/user/donate");
+    expect(link.prefilled).toEqual({ amount: false, recurrence: false });
+    expect(link.note).toMatch(/recurring-only/i);
   });
 });
 

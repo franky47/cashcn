@@ -4,7 +4,8 @@
 export type Interval = "once" | "month" | "year";
 
 export interface Amount {
-  value: number;
+  /** null = amountless: open the checkout and let the user pick. */
+  value: number | null;
   interval: Interval;
 }
 

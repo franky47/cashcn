@@ -2,6 +2,7 @@ import { InvalidAmountError } from "./errors.ts";
 import type { Amount, Interval } from "./types.ts";
 
 // Parse the amount token: `100`, `10/m`, `25/y`, `10/month`, `5/yr`.
+// A bare recurrence (`/m`, `/y`) is an amountless donation (`value: null`).
 // The leading `$` is intentionally dropped by the user to dodge shell expansion,
 // but we tolerate it if it sneaks through quoting.
 
@@ -23,17 +24,20 @@ export function parseAmount(token: string): Amount | InvalidAmountError {
     });
   }
   const cleaned = token.trim().replace(/^\$/, "");
-  const match = cleaned.match(/^(\d+(?:\.\d+)?)(?:\/([a-z]+))?$/i);
-  if (!match) {
+  const match = cleaned.match(/^(\d+(?:\.\d+)?)?(?:\/([a-z]+))?$/i);
+  if (!match || (!match[1] && !match[2])) {
     return new InvalidAmountError({
-      reason: `Invalid amount "${token}". Use a number, optionally suffixed with /m or /y (e.g. 10/m).`,
+      reason: `Invalid amount "${token}". Use a number, optionally suffixed with /m or /y (e.g. 10/m), or a bare /m for an amountless donation.`,
     });
   }
-  const value = Number(match[1]);
-  if (!Number.isFinite(value) || value <= 0) {
-    return new InvalidAmountError({
-      reason: `Amount must be a positive number, got "${token}".`,
-    });
+  let value: number | null = null;
+  if (match[1]) {
+    value = Number(match[1]);
+    if (!Number.isFinite(value) || value <= 0) {
+      return new InvalidAmountError({
+        reason: `Amount must be a positive number, got "${token}".`,
+      });
+    }
   }
   if (!match[2]) return { value, interval: "once" };
 

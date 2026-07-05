@@ -68,6 +68,54 @@ describe("run", () => {
     expect(h.text()).toContain("$10 monthly");
   });
 
+  it("builds an amountless one-time link from a bare destination", async () => {
+    const h = harness(fakeSource());
+    const code = await run(["oc://cashcn", "--print"], h.deps);
+    expect(code).toBe(0);
+    expect(h.text()).toContain("opencollective.com/cashcn/donate");
+    expect(h.text()).not.toContain("amount=");
+    expect(h.text()).toContain("one-time donation");
+  });
+
+  it("builds an amountless monthly link from a bare /m", async () => {
+    const h = harness(fakeSource());
+    const code = await run(["oc://cashcn", "/m", "--print"], h.deps);
+    expect(code).toBe(0);
+    expect(h.text()).toContain("interval=month");
+    expect(h.text()).not.toContain("amount=");
+    expect(h.text()).toContain("monthly donation");
+  });
+
+  it("skips GitHub tier resolution for an amountless donation", async () => {
+    const source = fakeSource({
+      fetchSponsorTiers: async () => {
+        throw new Error("tier lookup should not run without an amount");
+      },
+    });
+    const h = harness(source);
+    const code = await run(["gh://franky47", "/m", "--print"], h.deps);
+    expect(code).toBe(0);
+    expect(h.text()).not.toContain("tier_id=");
+  });
+
+  it.each(["/m", "100", "10/m"])(
+    "rejects a lone amount-shaped argument (%s) as a missing destination",
+    async (token) => {
+      const h = harness(fakeSource());
+      const code = await run([token], h.deps);
+      expect(code).toBe(1);
+      expect(h.errText()).toMatch(/looks like an amount/i);
+      expect(h.opened).toEqual([]);
+    },
+  );
+
+  it("rejects an empty amount token", async () => {
+    const h = harness(fakeSource());
+    const code = await run(["franky47", ""], h.deps);
+    expect(code).toBe(1);
+    expect(h.errText()).toMatch(/missing amount/i);
+  });
+
   it("rejects extra positional arguments", async () => {
     const h = harness(fakeSource());
     const code = await run(["sponsor", "oc://cashcn", "10"], h.deps);
